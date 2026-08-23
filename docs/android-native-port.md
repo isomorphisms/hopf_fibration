@@ -1,6 +1,6 @@
 # Android native Hopf port
 
-This port treats `walczyk/` as pinned reference material, not as the implementation architecture. The phone code is deliberately split into a pure mathematical layer and a small Android/GLES3 shell. That keeps the topology/state code replaceable by Edriç later without making Android lifecycle or GL calls part of the language boundary.
+This port treats `walczyk/` as pinned reference material, not as the implementation architecture. The phone code is deliberately split into an Idriç mathematical source layer and a small Android/GLES3 shell. Android lifecycle, EGL, touch handling, upload, and drawing do not own Hopf mathematics.
 
 ## What is carried forward
 
@@ -13,7 +13,17 @@ The useful state in Walczyk's explorer is small:
 - the mode parameters (`offset`, arc angle, random seed/distribution, loxodrome offset, curl alpha/beta);
 - a three-angle rotation applied to the base points before lifting them to fibers.
 
-`hopf_math.[ch]` represents exactly that state. It has two explicit stages:
+`src/Hopf.idric` is the source of truth for that state and the associated float32 update formulas. It owns the mode choice, C-facing state fields, defaults, normalization and rotation constants, xorshift parameters, the great-circle/loxodrome/curl expressions, the quaternion fiber parameterization, and the modified stereographic projection.
+
+The Android build consumes checked-in `app/src/main/cpp/hopf_math.[ch]` artifacts generated from the Idriç source. This keeps the APK build independent of an Idriç bootstrap while making hand-edited C math drift a CI failure. Run:
+
+```sh
+IDRIC=/path/to/Idric/build/exec/idris2 sh scripts/regenerate-hopf-math.sh
+```
+
+or use `--check` to verify the checked-in artifacts without replacing them. CI uses pinned Idriç commit `61970be77769f607cca8650bf424c0f0b22ddee7` for this check.
+
+The C ABI deliberately remains the one introduced by the first phone slice. It has two explicit stages:
 
 1. generate colored base points on S2;
 2. lift each base point to a quaternion fiber and apply the modified stereographic projection used by the reference implementation.
@@ -33,6 +43,8 @@ The first phone renderer keeps only the part that matters for seeing and manipul
 - one `GL_LINE_LOOP` draw per fiber;
 - one-finger orbit and pinch zoom.
 
+`hopf_android.c` remains the native shell. One-finger drag still changes camera yaw/pitch with the same sensitivity and pitch limits. Pinch still changes camera distance with the same ratio update and `[1.4, 12.0]` clamp, and pointer-up after a pinch remains blocked until the gesture ends so pointer-index changes cannot become an accidental orbit. None of those interactions mutate the Hopf model.
+
 This is intentionally close to the already-used Wegert Android backend rather than to Walczyk's desktop GLFW/GLAD setup.
 
 ### Shader idea
@@ -51,13 +63,21 @@ Walczyk's shadow pass is not in the first phone slice. Its fragment shader perfo
 - shadow-map framebuffer and depth pass;
 - texture-coordinate fields that are unused by the reference shaders;
 - the unused `u_time` uniforms;
-- the reference `Mesh`/`Shader` wrapper structure.
+- the reference `Mesh`/`Shader` wrapper structure;
+- an Idriç runtime, allocator, Android lifecycle binding, or GL binding inside the APK.
 
 The GLES3 renderer also avoids primitive-restart indexing. A few hundred `GL_LINE_LOOP` calls are simple and cheap enough for this first slice, and they avoid carrying desktop mesh machinery into the phone code.
 
-## Edriç boundary
+## Idriç boundary
 
-The intended next replacement boundary is `hopf_math.[ch]`, not `hopf_android.c`. An Edriç implementation only needs to expose the same conceptual operations: produce S2 base points from `hopf_state`, then produce position/color vertices for the fibers. Android lifecycle, EGL creation, touch input, buffer upload, and draw calls remain in the thin native shell.
+The replacement boundary is now explicit rather than deferred:
+
+- authored mathematical source: `src/Hopf.idric`;
+- source-to-C emitters: `src/GenerateHeader.idric` and `src/GenerateSource.idric`;
+- checked-in NDK artifacts: `app/src/main/cpp/hopf_math.[ch]`;
+- native Android shell: `app/src/main/cpp/hopf_android.c`.
+
+The shell asks only for default state, base-point/vertex counts, S2 base points, and fiber vertices. It owns allocation, GLES upload/draw, lifecycle, and touch-derived camera state. This keeps platform glue thin without forcing the phone build to carry the compiler or an Idriç runtime.
 
 ## Initial phone defaults
 
