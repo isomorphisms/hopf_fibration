@@ -11,7 +11,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Test extracted Hopf math
+      - name: Install Idriç bootstrap dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chezscheme
+
+      - name: Build pinned Idriç compiler
+        shell: bash
+        run: |
+          set -euxo pipefail
+          idric_sha=61970be77769f607cca8650bf424c0f0b22ddee7
+          idric_dir="$RUNNER_TEMP/Idric"
+          git init "$idric_dir"
+          git -C "$idric_dir" remote add origin https://github.com/isomorphisms/Idric.git
+          git -C "$idric_dir" fetch --depth 1 origin "$idric_sha"
+          git -C "$idric_dir" checkout --detach FETCH_HEAD
+          make -C "$idric_dir" bootstrap SCHEME=scheme
+          "$idric_dir/build/exec/idris2" --version
+          echo "IDRIC=$idric_dir/build/exec/idris2" >> "$GITHUB_ENV"
+
+      - name: Verify Idriç-generated Hopf boundary
+        run: sh scripts/regenerate-hopf-math.sh --check
+
+      - name: Test generated Hopf math
         run: |
           cc -std=c11 -Wall -Wextra -Wpedantic -Werror \
             -Iapp/src/main/cpp \
