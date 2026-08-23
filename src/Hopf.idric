@@ -1,0 +1,312 @@
+module Hopf
+
+%default total
+
+public export
+choice hopf_mode one_of
+  great_circle
+  random
+  loxodrome
+  curl
+
+public export
+mode_c_name : hopf_mode → String
+mode_c_name great_circle = "HOPF_GREAT_CIRCLE"
+mode_c_name random = "HOPF_RANDOM"
+mode_c_name loxodrome = "HOPF_LOXODROME"
+mode_c_name curl = "HOPF_CURL"
+
+public export
+max_circles : Nat
+max_circles = 8
+
+public export
+default_mode : hopf_mode
+default_mode = curl
+
+public export
+default_fibers : Nat
+default_fibers = 160
+
+public export
+default_samples_per_fiber : Nat
+default_samples_per_fiber = 128
+
+public export
+default_circle_count : Nat
+default_circle_count = 1
+
+public export
+default_circle_offset : String
+default_circle_offset = "0.0f"
+
+public export
+default_circle_arc_angle : String
+default_circle_arc_angle = "(float)(2.0 * M_PI)"
+
+public export
+default_random_seed : Nat
+default_random_seed = 1
+
+public export
+default_random_mean : String
+default_random_mean = "0.0f"
+
+public export
+default_random_standard_deviation : String
+default_random_standard_deviation = "1.0f"
+
+public export
+default_loxodrome_offset : String
+default_loxodrome_offset = "2.0f"
+
+public export
+default_curl_alpha : String
+default_curl_alpha = "4.0f"
+
+public export
+default_curl_beta : String
+default_curl_beta = "0.5f"
+
+public export
+default_rotation : String
+default_rotation = "0.0f"
+
+public export
+normalization_epsilon : String
+normalization_epsilon = "1.0e-7f"
+
+public export
+great_circle_offset_limit : String
+great_circle_offset_limit = "0.999f"
+
+public export
+fiber_z_limit : String
+fiber_z_limit = "0.999999f"
+
+public export
+projection_epsilon : String
+projection_epsilon = "1.0e-12f"
+
+public export
+random_zero_seed : String
+random_zero_seed = "0x6d2b79f5u"
+
+public export
+xorshift_left_first : Nat
+xorshift_left_first = 13
+
+public export
+xorshift_right : Nat
+xorshift_right = 17
+
+public export
+xorshift_left_last : Nat
+xorshift_left_last = 5
+
+public export
+choice c_field_type one_of
+  mode_field
+  u32_field
+  float_field
+  float_array
+
+public export
+choice state_field one_of
+  field String c_field_type
+
+public export
+state_fields : List state_field
+state_fields =
+  [ field "mode" mode_field
+  , field "fibers" u32_field
+  , field "samples_per_fiber" u32_field
+  , field "circle_count" u32_field
+  , field "circle_offsets" float_array
+  , field "circle_arc_angles" float_array
+  , field "random_seed" u32_field
+  , field "random_mean" float_field
+  , field "random_standard_deviation" float_field
+  , field "loxodrome_offset" float_field
+  , field "curl_alpha" float_field
+  , field "curl_beta" float_field
+  , field "rotation_x" float_field
+  , field "rotation_y" float_field
+  , field "rotation_z" float_field
+  ]
+
+public export
+choice float_expression one_of
+  raw String
+  call_one String float_expression
+  call_two String float_expression float_expression
+  infix String float_expression float_expression
+
+public export
+render_float : float_expression → String
+render_float (raw text) = text
+render_float (call_one name value) = name ++ "(" ++ render_float value ++ ")"
+render_float (call_two name left right) =
+  name ++ "(" ++ render_float left ++ ", " ++ render_float right ++ ")"
+render_float (infix operator left right) =
+  "(" ++ render_float left ++ " " ++ operator ++ " " ++ render_float right ++ ")"
+
+public export
+plus : float_expression → float_expression → float_expression
+plus = infix "+"
+
+public export
+minus : float_expression → float_expression → float_expression
+minus = infix "-"
+
+public export
+times : float_expression → float_expression → float_expression
+times = infix "*"
+
+public export
+divided_by : float_expression → float_expression → float_expression
+divided_by = infix "/"
+
+public export
+rotation_x_y : float_expression
+rotation_x_y = minus (times (raw "cosine") (raw "y")) (times (raw "sine") (raw "z"))
+
+public export
+rotation_x_z : float_expression
+rotation_x_z = plus (times (raw "sine") (raw "y")) (times (raw "cosine") (raw "z"))
+
+public export
+rotation_y_x : float_expression
+rotation_y_x = plus (times (raw "cosine") (raw "x")) (times (raw "sine") (raw "z"))
+
+public export
+rotation_y_z : float_expression
+rotation_y_z = plus (times (raw "-sine") (raw "x")) (times (raw "cosine") (raw "z"))
+
+public export
+rotation_z_x : float_expression
+rotation_z_x = minus (times (raw "cosine") (raw "x")) (times (raw "sine") (raw "y"))
+
+public export
+rotation_z_y : float_expression
+rotation_z_y = plus (times (raw "sine") (raw "x")) (times (raw "cosine") (raw "y"))
+
+public export
+color_component : String → float_expression
+color_component component = plus (times (raw component) (raw "0.5f")) (raw "0.5f")
+
+public export
+great_circle_x : float_expression
+great_circle_x = times (call_one "cosf" (raw "theta")) (raw "cross_section_radius")
+
+public export
+great_circle_y : float_expression
+great_circle_y = times (call_one "sinf" (raw "theta")) (raw "cross_section_radius")
+
+public export
+loxodrome_x : float_expression
+loxodrome_x =
+  times
+    (call_one "cosf" (raw "theta"))
+    (call_one "cosf" (times (raw "theta") (raw "state->loxodrome_offset")))
+
+public export
+loxodrome_y : float_expression
+loxodrome_y =
+  times
+    (call_one "cosf" (raw "theta"))
+    (call_one "sinf" (times (raw "theta") (raw "state->loxodrome_offset")))
+
+public export
+loxodrome_z : float_expression
+loxodrome_z = call_one "sinf" (raw "theta")
+
+public export
+curl_x : float_expression
+curl_x =
+  plus
+    (times
+      (call_one "sinf" (times (raw "theta") (raw "state->curl_alpha")))
+      (raw "state->curl_beta"))
+    (call_one "cosf" (raw "theta"))
+
+public export
+curl_y : float_expression
+curl_y =
+  plus
+    (times
+      (call_one "cosf" (times (raw "theta") (raw "state->curl_alpha")))
+      (raw "state->curl_beta"))
+    (call_one "sinf" (raw "theta"))
+
+public export
+curl_denominator : float_expression
+curl_denominator =
+  plus
+    (raw "1.0f")
+    (plus (times (raw "x") (raw "x")) (times (raw "y") (raw "y")))
+
+public export
+curl_position_x : float_expression
+curl_position_x = divided_by (times (raw "2.0f") (raw "x")) (raw "denominator")
+
+public export
+curl_position_y : float_expression
+curl_position_y = divided_by (times (raw "2.0f") (raw "y")) (raw "denominator")
+
+public export
+curl_position_z : float_expression
+curl_position_z =
+  divided_by
+    (plus
+      (raw "-1.0f")
+      (plus (times (raw "x") (raw "x")) (times (raw "y") (raw "y"))))
+    (raw "denominator")
+
+public export
+fiber_alpha : float_expression
+fiber_alpha =
+  call_one "sqrtf" (times (plus (raw "1.0f") (raw "c")) (raw "0.5f"))
+
+public export
+fiber_beta : float_expression
+fiber_beta =
+  call_one "sqrtf" (times (minus (raw "1.0f") (raw "c")) (raw "0.5f"))
+
+public export
+fiber_phase : float_expression
+fiber_phase = call_two "atan2f" (raw "-a") (raw "b")
+
+public export
+quaternion_w : float_expression
+quaternion_w = times (raw "alpha") (call_one "cosf" (raw "theta"))
+
+public export
+quaternion_x : float_expression
+quaternion_x = times (raw "alpha") (call_one "sinf" (raw "theta"))
+
+public export
+quaternion_y : float_expression
+quaternion_y = times (raw "beta") (call_one "cosf" (raw "phi"))
+
+public export
+quaternion_z : float_expression
+quaternion_z = times (raw "beta") (call_one "sinf" (raw "phi"))
+
+public export
+projection_vector_length : float_expression
+projection_vector_length =
+  call_one
+    "sqrtf"
+    (call_two
+      "fmaxf"
+      (minus (raw "1.0f") (times (raw "quaternion_w") (raw "quaternion_w")))
+      (raw projection_epsilon))
+
+public export
+projection_radius : float_expression
+projection_radius = divided_by (call_one "acosf" (raw "quaternion_w")) (raw "(float)M_PI")
+
+public export
+projection_scale : float_expression
+projection_scale = divided_by (raw "radius") (raw "vector_length")
