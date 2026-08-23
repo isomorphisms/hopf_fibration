@@ -29,6 +29,7 @@ jobs:
           make -C "$idric_dir" bootstrap SCHEME=scheme
           "$idric_dir/build/exec/idris2" --version
           echo "IDRIC=$idric_dir/build/exec/idris2" >> "$GITHUB_ENV"
+          echo "IDRIS2_PREFIX=$idric_dir/bootstrap-build" >> "$GITHUB_ENV"
 
       - name: Verify Idriç-generated Hopf boundary
         run: sh scripts/regenerate-hopf-math.sh --check
