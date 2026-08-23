@@ -140,7 +140,7 @@ choice float_expression one_of
   raw String
   call_one String float_expression
   call_two String float_expression float_expression
-  infix String float_expression float_expression
+  binary_op String float_expression float_expression
 
 public export
 render_float : float_expression → String
@@ -148,24 +148,24 @@ render_float (raw text) = text
 render_float (call_one name value) = name ++ "(" ++ render_float value ++ ")"
 render_float (call_two name left right) =
   name ++ "(" ++ render_float left ++ ", " ++ render_float right ++ ")"
-render_float (infix operator left right) =
+render_float (binary_op operator left right) =
   "(" ++ render_float left ++ " " ++ operator ++ " " ++ render_float right ++ ")"
 
 public export
 plus : float_expression → float_expression → float_expression
-plus = infix "+"
+plus = binary_op "+"
 
 public export
 minus : float_expression → float_expression → float_expression
-minus = infix "-"
+minus = binary_op "-"
 
 public export
 times : float_expression → float_expression → float_expression
-times = infix "*"
+times = binary_op "*"
 
 public export
 divided_by : float_expression → float_expression → float_expression
-divided_by = infix "/"
+divided_by = binary_op "/"
 
 public export
 rotation_x_y : float_expression
