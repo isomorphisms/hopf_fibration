@@ -34,6 +34,7 @@ header_text = lines_text
   , ""
   , "#define HOPF_MAX_CIRCLES " ++ show max_circles
   , ""
+  , "struct hopf_state {"
   ] ++
   lines_text (map render_state_field state_fields) ++
   lines_text
