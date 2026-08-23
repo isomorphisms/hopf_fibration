@@ -1,0 +1,51 @@
+name: Android native Hopf
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test extracted Hopf math
+        run: |
+          cc -std=c11 -Wall -Wextra -Wpedantic -Werror \
+            -Iapp/src/main/cpp \
+            app/src/main/cpp/hopf_math.c tests/hopf_math_test.c \
+            -lm -o "$RUNNER_TEMP/hopf-math-test"
+          "$RUNNER_TEMP/hopf-math-test"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android toolchain
+        run: |
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;29.0.14206865" "cmake;3.22.1"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.5.0'
+
+      - name: Build debug APK
+        run: gradle --no-daemon :app:assembleDebug
+
+      - name: Verify native ABIs
+        run: |
+          unzip -l app/build/outputs/apk/debug/app-debug.apk > /tmp/apk-files
+          grep -q 'lib/arm64-v8a/libhopf.so' /tmp/apk-files
+          grep -q 'lib/armeabi-v7a/libhopf.so' /tmp/apk-files
+          grep -q 'lib/x86_64/libhopf.so' /tmp/apk-files
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hopf-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
