@@ -2,7 +2,9 @@
 set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-IDRIC=${IDRIC:-../Idric/build/exec/idris2}
+if [ -z "${IDRIC:-}" ]; then
+    IDRIC="$ROOT/../Idric/build/exec/idris2"
+fi
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT HUP INT TERM
 
