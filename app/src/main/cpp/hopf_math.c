@@ -1,3 +1,4 @@
+/* Generated from src/Hopf.idric. Do not edit by hand. */
 #include "hopf_math.h"
 
 #include <math.h>
@@ -36,22 +37,22 @@ static void rotate_base_point(const struct hopf_state *state, float point[3]) {
 
     float cosine = cosf(state->rotation_x);
     float sine = sinf(state->rotation_x);
-    float rotated_y = cosine * y - sine * z;
-    float rotated_z = sine * y + cosine * z;
+    float rotated_y = ((cosine * y) - (sine * z));
+    float rotated_z = ((sine * y) + (cosine * z));
     y = rotated_y;
     z = rotated_z;
 
     cosine = cosf(state->rotation_y);
     sine = sinf(state->rotation_y);
-    float rotated_x = cosine * x + sine * z;
-    rotated_z = -sine * x + cosine * z;
+    float rotated_x = ((cosine * x) + (sine * z));
+    rotated_z = ((-sine * x) + (cosine * z));
     x = rotated_x;
     z = rotated_z;
 
     cosine = cosf(state->rotation_z);
     sine = sinf(state->rotation_z);
-    rotated_x = cosine * x - sine * y;
-    rotated_y = sine * x + cosine * y;
+    rotated_x = ((cosine * x) - (sine * y));
+    rotated_y = ((sine * x) + (cosine * y));
     point[0] = rotated_x;
     point[1] = rotated_y;
     point[2] = z;
@@ -63,9 +64,9 @@ static void finish_base_point(
 ) {
     rotate_base_point(state, point->position);
     normalize3(point->position);
-    point->color[0] = point->position[0] * 0.5f + 0.5f;
-    point->color[1] = point->position[1] * 0.5f + 0.5f;
-    point->color[2] = point->position[2] * 0.5f + 0.5f;
+    point->color[0] = ((point->position[0] * 0.5f) + 0.5f);
+    point->color[1] = ((point->position[1] * 0.5f) + 0.5f);
+    point->color[2] = ((point->position[2] * 0.5f) + 0.5f);
 }
 
 static uint32_t xorshift32(uint32_t *state) {
@@ -142,8 +143,8 @@ static void generate_great_circle(
                 ? (float)index / (float)(state->fibers - 1)
                 : 0.0f;
             float theta = arc * fraction;
-            points[cursor].position[0] = cosf(theta) * cross_section_radius;
-            points[cursor].position[1] = sinf(theta) * cross_section_radius;
+            points[cursor].position[0] = (cosf(theta) * cross_section_radius);
+            points[cursor].position[1] = (sinf(theta) * cross_section_radius);
             points[cursor].position[2] = offset;
             finish_base_point(state, &points[cursor]);
             ++cursor;
@@ -175,8 +176,8 @@ static void generate_loxodrome(
     for (size_t index = 0; index < count; ++index) {
         float fraction = count > 1 ? (float)index / (float)(count - 1) : 0.0f;
         float theta = -(float)M_PI * 0.45f + fraction * (float)M_PI * 0.90f;
-        points[index].position[0] = cosf(theta) * cosf(theta * state->loxodrome_offset);
-        points[index].position[1] = cosf(theta) * sinf(theta * state->loxodrome_offset);
+        points[index].position[0] = (cosf(theta) * cosf((theta * state->loxodrome_offset)));
+        points[index].position[1] = (cosf(theta) * sinf((theta * state->loxodrome_offset)));
         points[index].position[2] = sinf(theta);
         finish_base_point(state, &points[index]);
     }
@@ -192,12 +193,12 @@ static void generate_curl(
         float theta = count > 0
             ? (float)(2.0 * M_PI) * (float)index / (float)count
             : 0.0f;
-        float x = sinf(theta * state->curl_alpha) * state->curl_beta + cosf(theta);
-        float y = cosf(theta * state->curl_alpha) * state->curl_beta + sinf(theta);
-        float denominator = 1.0f + x * x + y * y;
-        points[index].position[0] = 2.0f * x / denominator;
-        points[index].position[1] = 2.0f * y / denominator;
-        points[index].position[2] = (-1.0f + x * x + y * y) / denominator;
+        float x = ((sinf((theta * state->curl_alpha)) * state->curl_beta) + cosf(theta));
+        float y = ((cosf((theta * state->curl_alpha)) * state->curl_beta) + sinf(theta));
+        float denominator = (1.0f + ((x * x) + (y * y)));
+        points[index].position[0] = ((2.0f * x) / denominator);
+        points[index].position[1] = ((2.0f * y) / denominator);
+        points[index].position[2] = ((-1.0f + ((x * x) + (y * y))) / denominator);
         finish_base_point(state, &points[index]);
     }
 }
@@ -245,23 +246,23 @@ void hopf_generate_fibration(
         float b = points[point_index].position[1];
         float c = clampf(points[point_index].position[2], -0.999999f, 0.999999f);
 
-        float alpha = sqrtf((1.0f + c) * 0.5f);
-        float beta = sqrtf((1.0f - c) * 0.5f);
+        float alpha = sqrtf(((1.0f + c) * 0.5f));
+        float beta = sqrtf(((1.0f - c) * 0.5f));
         float phase = atan2f(-a, b);
 
         for (uint32_t sample = 0; sample < state->samples_per_fiber; ++sample) {
             float phi = (float)(2.0 * M_PI) * (float)sample / (float)state->samples_per_fiber;
             float theta = phase - phi;
 
-            float quaternion_w = alpha * cosf(theta);
-            float quaternion_x = alpha * sinf(theta);
-            float quaternion_y = beta * cosf(phi);
-            float quaternion_z = beta * sinf(phi);
+            float quaternion_w = (alpha * cosf(theta));
+            float quaternion_x = (alpha * sinf(theta));
+            float quaternion_y = (beta * cosf(phi));
+            float quaternion_z = (beta * sinf(phi));
 
             quaternion_w = clampf(quaternion_w, -1.0f, 1.0f);
-            float vector_length = sqrtf(fmaxf(1.0f - quaternion_w * quaternion_w, 1.0e-12f));
-            float radius = acosf(quaternion_w) / (float)M_PI;
-            float projection = radius / vector_length;
+            float vector_length = sqrtf(fmaxf((1.0f - (quaternion_w * quaternion_w)), 1.0e-12f));
+            float radius = (acosf(quaternion_w) / (float)M_PI);
+            float projection = (radius / vector_length);
 
             vertices[cursor].position[0] = projection * quaternion_x;
             vertices[cursor].position[1] = projection * quaternion_y;

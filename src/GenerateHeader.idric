@@ -1,0 +1,75 @@
+module GenerateHeader
+
+import Hopf
+
+%default total
+
+lines_text : List String → String
+lines_text [] = ""
+lines_text (line :: lines) = line ++ "\n" ++ lines_text lines
+
+render_state_field : state_field → String
+render_state_field (field name mode_field) = "    enum hopf_mode " ++ name ++ ";"
+render_state_field (field name u32_field) = "    uint32_t " ++ name ++ ";"
+render_state_field (field name float_field) = "    float " ++ name ++ ";"
+render_state_field (field name float_array) =
+  "    float " ++ name ++ "[HOPF_MAX_CIRCLES];"
+
+header_text : String
+header_text = lines_text
+  [ "#ifndef HOPF_MATH_H"
+  , "#define HOPF_MATH_H"
+  , ""
+  , "/* Generated from src/Hopf.idric. Do not edit by hand. */"
+  , ""
+  , "#include <stddef.h>"
+  , "#include <stdint.h>"
+  , ""
+  , "enum hopf_mode {"
+  , "    HOPF_GREAT_CIRCLE = 0,"
+  , "    HOPF_RANDOM = 1,"
+  , "    HOPF_LOXODROME = 2,"
+  , "    HOPF_CURL = 3"
+  , "};"
+  , ""
+  , "#define HOPF_MAX_CIRCLES " ++ show max_circles
+  , ""
+  , "struct hopf_state {"
+  ] ++
+  lines_text (map render_state_field state_fields) ++
+  lines_text
+  [ "};"
+  , ""
+  , "struct hopf_base_point {"
+  , "    float position[3];"
+  , "    float color[3];"
+  , "};"
+  , ""
+  , "struct hopf_vertex {"
+  , "    float position[3];"
+  , "    float color[3];"
+  , "};"
+  , ""
+  , "void hopf_state_default(struct hopf_state *state);"
+  , "size_t hopf_base_point_count(const struct hopf_state *state);"
+  , "size_t hopf_vertex_count(const struct hopf_state *state);"
+  , ""
+  , "void hopf_generate_base_points("
+  , "    const struct hopf_state *state,"
+  , "    struct hopf_base_point *points,"
+  , "    size_t point_capacity"
+  , ");"
+  , ""
+  , "void hopf_generate_fibration("
+  , "    const struct hopf_state *state,"
+  , "    const struct hopf_base_point *points,"
+  , "    size_t point_count,"
+  , "    struct hopf_vertex *vertices,"
+  , "    size_t vertex_capacity"
+  , ");"
+  , ""
+  , "#endif"
+  ]
+
+main : IO ()
+main = putStr header_text

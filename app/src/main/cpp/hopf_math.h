@@ -1,6 +1,8 @@
 #ifndef HOPF_MATH_H
 #define HOPF_MATH_H
 
+/* Generated from src/Hopf.idric. Do not edit by hand. */
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -17,19 +19,15 @@ struct hopf_state {
     enum hopf_mode mode;
     uint32_t fibers;
     uint32_t samples_per_fiber;
-
     uint32_t circle_count;
     float circle_offsets[HOPF_MAX_CIRCLES];
     float circle_arc_angles[HOPF_MAX_CIRCLES];
-
     uint32_t random_seed;
     float random_mean;
     float random_standard_deviation;
-
     float loxodrome_offset;
     float curl_alpha;
     float curl_beta;
-
     float rotation_x;
     float rotation_y;
     float rotation_z;
