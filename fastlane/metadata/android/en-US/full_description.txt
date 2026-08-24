@@ -1,0 +1,3 @@
+Hopf Fibration is a native Android viewer for exploring fibers of the Hopf map.
+
+The app renders the geometry with OpenGL ES, supports one-finger orbit and pinch zoom, and includes several base-point families. Its mathematical state and mapping formulas are maintained in Idriç and emitted through a checked plain-C boundary consumed by the Android renderer.
